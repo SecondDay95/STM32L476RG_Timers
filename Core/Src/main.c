@@ -61,6 +61,7 @@ static void MX_TIM3_Init(void);
 
 //Funkcja wywolywana po pojawieniu sie przerwania po przepelnieniu dowolnego licznika
 //(Po przepelnieniu licznika wywolywane jest przerwanie)
+//Funkcja obslugujaca przerwania po przepelnieniu dowolnego licznika:
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 	//Jeżeli przerwanie wywolane zostalo po przepelnieniu sie licznika TIM6:
@@ -70,6 +71,36 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 	}
 
+	//Jeżeli przerwanie wywolane zostalo po przepelnieniu licznika TIM3:
+	if(htim == &htim3) {
+		//Zapalenie 3 zewnetrznych diod na plytce stykowej:
+		HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_SET);
+	}
+
+}
+
+//Funkcja obslugujaca przerwania generowanych przez poszczzegolne kanaly licznika
+//(po przepelnieniu danego kanalu licznika):
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
+
+	//Jezeli przerwanie zostalo wywolane przez kanaly licznika TIM3
+	if(htim == &htim3) {
+		switch(HAL_TIM_GetActiveChannel(&htim3)) {
+		case HAL_TIM_ACTIVE_CHANNEL_1:
+			HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+			break;
+		case HAL_TIM_ACTIVE_CHANNEL_2:
+			HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+			break;
+		case HAL_TIM_ACTIVE_CHANNEL_3:
+			HAL_GPIO_WritePin(LED3_GPIO_Port, LED3_Pin, GPIO_PIN_RESET);
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 /* USER CODE END 0 */
@@ -109,6 +140,14 @@ int main(void)
 
   //Uruchomienie licznika TIM6:
   HAL_TIM_Base_Start_IT(&htim6);
+
+  //Uruchomienie licznika TIM3:
+  HAL_TIM_Base_Start_IT(&htim3);
+
+  //Uruchomienie kanalow licznika TIM3:
+  HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_3);
 
   /* USER CODE END 2 */
 
