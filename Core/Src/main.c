@@ -152,7 +152,13 @@ int main(void)
   HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_2);
   HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_3);
 
-
+  //Uruchomienie licznika TIM4:
+  HAL_TIM_Base_Start_IT(&htim4);
+  //Uruchomienie kanalow licznika TIM4 w trybie wyjscia PWM (kanaly licznika bezposrednio
+  //steruja pinami):
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 
   /* USER CODE END 2 */
 
