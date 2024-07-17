@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -105,6 +105,13 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
+//Obliczanie wartosci wypelnienia pwm do sterowania dioda rgb:
+float calc_pwm(float val)
+{
+    const float k = 0.13f;
+    const float x0 = 70.0f;
+    return 10000.0f / (1.0f + exp(-k * (val - x0)));
+}
 /* USER CODE END 0 */
 
 /**
@@ -160,12 +167,24 @@ int main(void)
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 
+  int counter = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //Sterowanie jasnością diody RGB:
+	  float r = 50 * (1.0f + sin(counter / 100.0f));
+	  float g = 50 * (1.0f + sin(1.5f * counter / 100.0f));
+	  float b = 50 * (1.0f + sin(2.0f * counter / 100.0f));
+	  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, calc_pwm(b));
+	  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, calc_pwm(g));
+	  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_3, calc_pwm(r));
+
+	  HAL_Delay(10);
+	  counter++;
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -321,7 +340,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 7999;
+  htim4.Init.Prescaler = 79;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 9999;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -346,19 +365,19 @@ static void MX_TIM4_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 2500;
-  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.Pulse = 50;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_LOW;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 5000;
+  sConfigOC.Pulse = 400;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 7500;
+  sConfigOC.Pulse = 2000;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
