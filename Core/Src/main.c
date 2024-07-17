@@ -57,6 +57,19 @@ static void MX_TIM6_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+//Funkcja wywolywana po pojawieniu sie przerwania po przepelnieniu dowolnego licznika
+//(Po przepelnieniu licznika wywolywane jest przerwanie)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+
+	//Jeżeli przerwanie wywolane zostalo po przepelnieniu sie licznika TIM6:
+	if(htim == &htim6) {
+		//Miganie dioda opiera sie o timer sprzetowy TIM6 i system przerwan
+		//Program glowny nie jest blokowany.
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+	}
+
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -90,6 +103,9 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+
+  //Uruchomienie licznika TIM6:
+  HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
 
