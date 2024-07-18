@@ -111,7 +111,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-volatile uint32_t captured_value;
+/*volatile uint32_t captured_value;
 //Funkcja wywolywana w przerwaniu po pomiarze czasu trwania impulsu(stanu niskiego) wyjscia
 //enkodera
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
@@ -129,6 +129,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 
 	}
 }
+*/
 
 //Obliczanie wartosci wypelnienia pwm do sterowania dioda rgb:
 float calc_pwm(float val)
@@ -215,9 +216,13 @@ int main(void)
   //Uruchomienie kanalu 1 licznika TIM2 w trybie wejscia dla sygnalu zewnetrznego w trybie przerwan:
   HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 
-  uint32_t old_value = 0;
+  //Uruchomienie timera TIM2 w trybie obsługi enkoderów (pomiaru pozycji enkodera):
+  HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+  int16_t prev_value = 0;
 
-  int counter = 0;
+  //uint32_t old_value = 0;
+
+  //int counter = 0;
 
   /* USER CODE END 2 */
 
@@ -248,11 +253,22 @@ int main(void)
 	  */
 
 	  //Wyswietlanie czasu trwania impulsu (stanu niskiego) enkodera:
+	  /*
 	  if(captured_value != 0) {
 
 		  printf("value = %lu\n", captured_value);
 		  captured_value = 0;
 	  }
+	  */
+
+	  //Wyswietlanie pozycji enkodera:
+	  int16_t value = __HAL_TIM_GET_COUNTER(&htim2);
+	  if(value != prev_value) {
+
+		  printf("value = %d\n", value);
+		  prev_value = value;
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -332,52 +348,34 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_SlaveConfigTypeDef sSlaveConfig = {0};
+  TIM_Encoder_InitTypeDef sConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 7999;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 39;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sSlaveConfig.SlaveMode = TIM_SLAVEMODE_RESET;
-  sSlaveConfig.InputTrigger = TIM_TS_TI1F_ED;
-  sSlaveConfig.TriggerPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sSlaveConfig.TriggerFilter = 0;
-  if (HAL_TIM_SlaveConfigSynchro(&htim2, &sSlaveConfig) != HAL_OK)
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 15;
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
